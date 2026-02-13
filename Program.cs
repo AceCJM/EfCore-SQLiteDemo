@@ -1,14 +1,16 @@
 ﻿#region Additional Namespaces
+using Microsoft.EntityFrameworkCore;
 using SQLiteDemo;
 #endregion
 
 #region Program
 
+#region Create db instance && Add items to db
 // Create db context class
 using AppDbContext db = new AppDbContext();
 
 // Loads/Deletes the Database file
-//db.Database.EnsureDeleted();
+db.Database.EnsureDeleted();
 db.Database.EnsureCreated();
 
 // Create The Departments
@@ -28,5 +30,28 @@ db.People.AddRange( // AddRange lets you add multiple things in one statement
 
 // Persist the data to the db file
 db.SaveChanges();
+#endregion
 
+#region Read data from the db
+// Create Lists to store data loaded from the db
+List<Department> departments = new();
+List<Person> people = new();
+
+// Read data from db
+departments = db.Departments
+                .Include(i => i.People) // References the People table for the Navigational Property to work
+                .OrderBy(d => d.DepartmentName)
+                .ToList();
+
+// Display the data retreived from the db
+foreach (Department department in departments) // Iterates through the Departments
+{
+    Console.WriteLine($"\nDepartment Name: {department.DepartmentName}, Code: {department.Code}\nPeople:");
+    foreach (Person person in department.People) // Iterates through the list of People created by the .Include statement
+    {
+        Console.WriteLine($"\tName: {person.Name}, Age: {person.Age}, Mark: {person.Mark}, Departments: {string.Join(", ", person.Department.Select(d => d.DepartmentName)) /* Uses LINQ to create a list of departmend names, string.join to join the list with ', ' as a separator */}");
+    }
+}
+
+#endregion
 #endregion
